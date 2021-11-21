@@ -1,8 +1,9 @@
 import { buildProgramFromSources, loadShadersFromURLS, setupWebGL } from "../libs/utils.js";
-import { ortho, lookAt, flatten } from "../libs/MV.js";
+import { ortho, lookAt, flatten, vec4, rotateY, translate, mult, inverse } from "../libs/MV.js";
 import {modelView, loadMatrix, multRotationY, multScale, multTranslation, popMatrix, pushMatrix} from "../libs/stack.js";
 
 import * as SPHERE from '../libs/sphere.js';
+import * as CUBE from '../libs/cube.js';
 
 /** @type WebGLRenderingContext */
 let gl;
@@ -42,7 +43,7 @@ function setup(shaders)
     }
 
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
-    SPHERE.init(gl);
+    CUBE.init(gl);
     gl.enable(gl.DEPTH_TEST);   // Enables Z-buffer depth test
     
     window.requestAnimationFrame(render);
@@ -76,6 +77,23 @@ function setup(shaders)
         SPHERE.draw(gl, program, mode);
     }
 
+    function floor(){
+        const uLocation = gl.getUniformLocation(program,"color");
+        gl.uniform4fv(uLocation,flatten(vec4(1.0,1.0,1.0,1.0)));
+        multScale([5,5,5]);
+        for(let i = 0; i<64;i+=2){
+            uploadModelView();
+            CUBE.draw(gl,program,mode);
+        }
+        gl.uniform4fv(uLocation,vec4(0.86,0.07,0.07,1.0));
+        for(let i = 1; i<64;i+=2){
+            uploadModelView();
+            multTranslation([1,1,1]);
+            CUBE.draw(gl,program,mode);
+        }
+
+    }
+
     function render()
     {
         if(animation) time += speed;
@@ -88,8 +106,8 @@ function setup(shaders)
         gl.uniformMatrix4fv(gl.getUniformLocation(program, "mProjection"), false, flatten(mProjection));
     
         loadMatrix(lookAt([0,VP_DISTANCE,VP_DISTANCE], [0,0,0], [0,1,0]));
-        
-        Sun();
+
+        floor();
     }
 }
 
