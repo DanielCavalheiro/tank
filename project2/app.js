@@ -25,7 +25,7 @@ function setup(shaders)
     let program = buildProgramFromSources(gl, shaders["shader.vert"], shaders["shader.frag"]);
 
     let mProjection = ortho(-VP_DISTANCE*aspect,VP_DISTANCE*aspect, -VP_DISTANCE, VP_DISTANCE,-3*VP_DISTANCE,3*VP_DISTANCE);
-
+    
     mode = gl.LINES; 
 
     resize_canvas();
@@ -44,6 +44,7 @@ function setup(shaders)
 
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     CUBE.init(gl);
+    SPHERE.init(gl);
     gl.enable(gl.DEPTH_TEST);   // Enables Z-buffer depth test
     
     window.requestAnimationFrame(render);
@@ -69,7 +70,6 @@ function setup(shaders)
     {
         // Don't forget to scale the sun, rotate it around the y axis at the correct speed
         multScale([10,10,10]);
-
         // Send the current modelview matrix to the vertex shader
         uploadModelView();
 
@@ -77,21 +77,46 @@ function setup(shaders)
         SPHERE.draw(gl, program, mode);
     }
 
-    function floor(){
+    function redTile(){
         const uLocation = gl.getUniformLocation(program,"color");
-        gl.uniform4fv(uLocation,flatten(vec4(1.0,1.0,1.0,1.0)));
+        gl.uniform4fv(uLocation,flatten(vec4(0.86,0.07,0.07,1.0)));
         multScale([5,5,5]);
-        for(let i = 0; i<64;i+=2){
-            uploadModelView();
-            CUBE.draw(gl,program,mode);
-        }
-        gl.uniform4fv(uLocation,vec4(0.86,0.07,0.07,1.0));
-        for(let i = 1; i<64;i+=2){
-            uploadModelView();
-            multTranslation([1,1,1]);
-            CUBE.draw(gl,program,mode);
-        }
+        uploadModelView();
+        CUBE.draw(gl,program,mode);
+    }
 
+    function greyTile(){
+        const uLocation = gl.getUniformLocation(program,"color");
+        gl.uniform4fv(uLocation,flatten(vec4(0.5,0.5,0.5,0.5)));
+        multScale([5,5,5]);
+        uploadModelView();
+        CUBE.draw(gl,program,mode);
+    }
+
+    function floor(){
+        multTranslation([-150, 0, -150]);
+        for (let i = 0; i < 100; i++) {
+            multTranslation([0, 0, 5]);
+            if(i%2==0)
+                multTranslation([5, 0, 0]);
+            pushMatrix();
+            for (let j = 0; j < 50; j++) {
+
+                pushMatrix();
+                redTile();
+                popMatrix()
+
+                multTranslation([5, 0, 0])
+                pushMatrix();
+                greyTile()
+                popMatrix();
+
+                multTranslation([5, 0, 0])
+            }
+            popMatrix();
+            if(i%2==0)
+                multTranslation([-5, 0, 0]);
+        }
     }
 
     function render()
@@ -105,9 +130,11 @@ function setup(shaders)
         
         gl.uniformMatrix4fv(gl.getUniformLocation(program, "mProjection"), false, flatten(mProjection));
     
-        loadMatrix(lookAt([0,VP_DISTANCE,VP_DISTANCE], [0,0,0], [0,1,0]));
+        loadMatrix(lookAt([VP_DISTANCE,VP_DISTANCE,VP_DISTANCE], [0,0,0], [0,1,0]));
 
+        pushMatrix();
         floor();
+        popMatrix();
     }
 }
 
