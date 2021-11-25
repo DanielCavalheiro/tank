@@ -12,8 +12,10 @@ let time = 0;           // Global simulation time in days
 let speed = 1/60.0;     // Speed (how many days added to time on each render pass
 let mode;               // Drawing mode (gl.LINES or gl.TRIANGLES)
 let animation = true;   // Animation is running
+let eye, at, up;
 
 const VP_DISTANCE = 50;
+const TILE_LENGHT=20
 
 function setup(shaders)
 {
@@ -28,6 +30,10 @@ function setup(shaders)
     
     mode = gl.LINES; 
 
+    eye= [VP_DISTANCE,VP_DISTANCE,VP_DISTANCE];
+    at=[0,0,0];
+    up=[0,1,0];
+   
     resize_canvas();
     window.addEventListener("resize", resize_canvas);
 
@@ -38,6 +44,26 @@ function setup(shaders)
                 break;
             case 'S':
                 mode = gl.TRIANGLES;
+                break;
+            case '1':
+                eye=[VP_DISTANCE,1,0];
+                at=[0,1,0];
+                up=[0,1,0];
+                break;
+            case '2':
+                eye=[0, VP_DISTANCE,0];
+                at=[0,0,0];
+                up=[-1,0,0];
+                break;
+            case '3':
+                eye=[0,1, VP_DISTANCE];
+                at=[0,1,0];
+                up=[0,1,0];
+                break;
+            case '4':
+                eye= [VP_DISTANCE,VP_DISTANCE,VP_DISTANCE];
+                at=[0,0,0];
+                up=[0,1,0];
                 break;
         }
     }
@@ -69,55 +95,59 @@ function setup(shaders)
     function Sun()
     {
         // Don't forget to scale the sun, rotate it around the y axis at the correct speed
-        multScale([10,10,10]);
+        const uLocation = gl.getUniformLocation(program,"color");
+        gl.uniform4fv(uLocation,flatten(vec4(1.0, 1.0, 0.0, 1.0)));
+        multScale([10,10,30]);
+        multTranslation([0,1,0]);
         // Send the current modelview matrix to the vertex shader
         uploadModelView();
 
         // Draw a sphere representing the sun
-        SPHERE.draw(gl, program, mode);
+        CUBE.draw(gl, program, mode);
     }
 
     function redTile(){
         const uLocation = gl.getUniformLocation(program,"color");
         gl.uniform4fv(uLocation,flatten(vec4(0.86,0.07,0.07,1.0)));
-        multScale([5,5,5]);
+        multScale([TILE_LENGHT,0,TILE_LENGHT]);
         uploadModelView();
         CUBE.draw(gl,program,mode);
     }
 
     function greyTile(){
         const uLocation = gl.getUniformLocation(program,"color");
-        gl.uniform4fv(uLocation,flatten(vec4(0.5,0.5,0.5,0.5)));
-        multScale([5,5,5]);
+        gl.uniform4fv(uLocation,flatten(vec4(0.35,0.35,0.35,0.35)));
+        multScale([TILE_LENGHT,0,TILE_LENGHT]);
         uploadModelView();
         CUBE.draw(gl,program,mode);
     }
 
     function floor(){
         multTranslation([-150, 0, -150]);
-        for (let i = 0; i < 100; i++) {
-            multTranslation([0, 0, 5]);
+        for (let i = 0; i < 50; i++) {
+            multTranslation([0, 0, TILE_LENGHT]);
             if(i%2==0)
-                multTranslation([5, 0, 0]);
+                multTranslation([TILE_LENGHT, 0, 0]);
             pushMatrix();
-            for (let j = 0; j < 50; j++) {
+            for (let j = 0; j < 25; j++) {
 
                 pushMatrix();
                 redTile();
                 popMatrix()
-
-                multTranslation([5, 0, 0])
+                multTranslation([TILE_LENGHT, 0, 0])
+                
                 pushMatrix();
                 greyTile()
                 popMatrix();
-
-                multTranslation([5, 0, 0])
+                multTranslation([TILE_LENGHT, 0, 0])
             }
             popMatrix();
             if(i%2==0)
-                multTranslation([-5, 0, 0]);
+                multTranslation([-TILE_LENGHT, 0, 0]);
         }
     }
+
+
 
     function render()
     {
@@ -130,11 +160,13 @@ function setup(shaders)
         
         gl.uniformMatrix4fv(gl.getUniformLocation(program, "mProjection"), false, flatten(mProjection));
     
-        loadMatrix(lookAt([VP_DISTANCE,VP_DISTANCE,VP_DISTANCE], [0,0,0], [0,1,0]));
+        loadMatrix(lookAt(eye, at, up));
 
         pushMatrix();
         floor();
         popMatrix();
+
+        Sun();
     }
 }
 
