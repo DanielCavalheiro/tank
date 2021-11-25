@@ -1,5 +1,5 @@
 import { buildProgramFromSources, loadShadersFromURLS, setupWebGL } from "../libs/utils.js";
-import { ortho, lookAt, flatten, vec4, rotateY, translate, mult, inverse } from "../libs/MV.js";
+import { ortho, lookAt, flatten, vec4, rotateY, translate, mult, inverse, scalem } from "../libs/MV.js";
 import {modelView, loadMatrix, multRotationY, multScale, multTranslation, popMatrix, pushMatrix} from "../libs/stack.js";
 
 import * as SPHERE from '../libs/sphere.js';
@@ -14,7 +14,7 @@ let mode;               // Drawing mode (gl.LINES or gl.TRIANGLES)
 let animation = true;   // Animation is running
 let eye, at, up;
 
-const VP_DISTANCE = 50;
+let VP_DISTANCE = 50;
 const TILE_LENGHT=20
 
 function setup(shaders)
@@ -46,8 +46,8 @@ function setup(shaders)
                 mode = gl.TRIANGLES;
                 break;
             case '1':
-                eye=[VP_DISTANCE,1,0];
-                at=[0,1,0];
+                eye=[VP_DISTANCE,0,0];
+                at=[0,0,0];
                 up=[0,1,0];
                 break;
             case '2':
@@ -56,14 +56,20 @@ function setup(shaders)
                 up=[-1,0,0];
                 break;
             case '3':
-                eye=[0,1, VP_DISTANCE];
-                at=[0,1,0];
+                eye=[0,0, VP_DISTANCE];
+                at=[0,0,0];
                 up=[0,1,0];
                 break;
             case '4':
                 eye= [VP_DISTANCE,VP_DISTANCE,VP_DISTANCE];
                 at=[0,0,0];
                 up=[0,1,0];
+                break;
+            case '+':
+                mProjection=mult(mProjection, scalem( 1.01, 1.01, 1.01 ));
+                break;
+            case '-':
+                mProjection=mult(mProjection, scalem( 1/1.01, 1/1.01, 1/1.01 ));
                 break;
         }
     }
@@ -98,7 +104,7 @@ function setup(shaders)
         const uLocation = gl.getUniformLocation(program,"color");
         gl.uniform4fv(uLocation,flatten(vec4(1.0, 1.0, 0.0, 1.0)));
         multScale([10,10,30]);
-        multTranslation([0,1,0]);
+        multTranslation([0,0,0]);
         // Send the current modelview matrix to the vertex shader
         uploadModelView();
 
