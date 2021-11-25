@@ -14,8 +14,9 @@ let mode;               // Drawing mode (gl.LINES or gl.TRIANGLES)
 let animation = true;   // Animation is running
 let eye, at, up;
 
-let VP_DISTANCE = 50;
-const TILE_LENGHT=20
+const VP_DISTANCE = 50;
+const TILE_LENGHT=20;
+const FLOOR_SIZE=30;
 
 function setup(shaders)
 {
@@ -74,7 +75,7 @@ function setup(shaders)
         }
     }
 
-    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.clearColor(0.23, 0.48, 0.97, 1.0);
     CUBE.init(gl);
     SPHERE.init(gl);
     gl.enable(gl.DEPTH_TEST);   // Enables Z-buffer depth test
@@ -114,7 +115,7 @@ function setup(shaders)
 
     function redTile(){
         const uLocation = gl.getUniformLocation(program,"color");
-        gl.uniform4fv(uLocation,flatten(vec4(0.86,0.07,0.07,1.0)));
+        gl.uniform4fv(uLocation,flatten(vec4(0.04,0.94,0.1,1.0)));
         multScale([TILE_LENGHT,0,TILE_LENGHT]);
         uploadModelView();
         CUBE.draw(gl,program,mode);
@@ -122,21 +123,20 @@ function setup(shaders)
 
     function greyTile(){
         const uLocation = gl.getUniformLocation(program,"color");
-        gl.uniform4fv(uLocation,flatten(vec4(0.35,0.35,0.35,0.35)));
+        gl.uniform4fv(uLocation,flatten(vec4(0.1,0.47,0.13,0.35)));
         multScale([TILE_LENGHT,0,TILE_LENGHT]);
         uploadModelView();
         CUBE.draw(gl,program,mode);
     }
 
     function floor(){
-        multTranslation([-150, 0, -150]);
-        for (let i = 0; i < 50; i++) {
+        multTranslation([-FLOOR_SIZE/2*TILE_LENGHT, 0, -FLOOR_SIZE/2*TILE_LENGHT]);
+        for (let i = 0; i < FLOOR_SIZE; i++) {
             multTranslation([0, 0, TILE_LENGHT]);
             if(i%2==0)
                 multTranslation([TILE_LENGHT, 0, 0]);
             pushMatrix();
-            for (let j = 0; j < 25; j++) {
-
+            for (let j = 0; j < FLOOR_SIZE/2; j++) {
                 pushMatrix();
                 redTile();
                 popMatrix()
