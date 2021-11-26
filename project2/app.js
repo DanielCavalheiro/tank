@@ -1,6 +1,6 @@
 import { buildProgramFromSources, loadShadersFromURLS, setupWebGL } from "../libs/utils.js";
 import { ortho, lookAt, flatten, vec4, rotateY, translate, mult, inverse, scalem, mat4, rotateZ } from "../libs/MV.js";
-import {modelView, loadMatrix, multRotationY, multScale, multTranslation, popMatrix, pushMatrix, multDeformX, multDeformY, multDeformZ, multRotationX} from "../libs/stack.js";
+import {modelView, loadMatrix, multRotationY, multScale, multTranslation, popMatrix, pushMatrix, multDeformX, multDeformY, multDeformZ, multRotationX, multRotationZ} from "../libs/stack.js";
 
 import * as SPHERE from '../libs/sphere.js';
 import * as CUBE from '../libs/cube.js';
@@ -10,14 +10,29 @@ import * as CYLINDER from "../libs/cylinder.js";
 let gl;
 
 let mode;               // Drawing mode (gl.LINES or gl.TRIANGLES)
-let animation = true;   // Animation is running
 let eye, at, up;
 let cannonAngle=0, cannonAngle2=0;
 let move=0;
 
-const VP_DISTANCE = 50;
+const VP_DISTANCE = 30;
+
+//Primitive dimensios constantes-----------------------------------------------------------------------------------------
+
+//Floor
 const TILE_LENGHT=20;
 const FLOOR_SIZE=30;
+
+//Tank Body
+//BottomComponent
+const BODY_BC_LENGHT=15;
+const BODY_BC_WITDH=8;
+const BODY_BC_HEIGHT=6;
+const BODY_BC_CONNECT=6;
+//Top Component
+const BODY_TC_LENGHT=17
+const BODY_TC_WITDH=10
+const BODY_TC_HEIGHT=4
+const BODY_TC_CONNECT=6
 
 function setup(shaders)
 {
@@ -29,10 +44,10 @@ function setup(shaders)
     let program = buildProgramFromSources(gl, shaders["shader.vert"], shaders["shader.frag"]);
 
     let mProjection = ortho(-VP_DISTANCE*aspect,VP_DISTANCE*aspect, -VP_DISTANCE, VP_DISTANCE,-3*VP_DISTANCE,3*VP_DISTANCE);
-    
+
     mode = gl.TRIANGLES; 
 
-    eye= [VP_DISTANCE,VP_DISTANCE,VP_DISTANCE];
+    eye= [VP_DISTANCE/10,VP_DISTANCE/10,VP_DISTANCE/10];
     at=[0,0,0];
     up=[0,1,0];
    
@@ -83,7 +98,7 @@ function setup(shaders)
                 up=[0,1,0];
                 break;
             case '4':
-                eye= [VP_DISTANCE,VP_DISTANCE,VP_DISTANCE];
+                eye= [VP_DISTANCE/10,VP_DISTANCE/10,VP_DISTANCE/10];
                 at=[0,0,0];
                 up=[0,1,0];
                 break;
@@ -239,7 +254,71 @@ function setup(shaders)
         }
     }
 
+    function bodyComponentBottom(){
+        const uLocation = gl.getUniformLocation(program,"color");
+        gl.uniform4fv(uLocation,flatten(vec4(0.5, 0.5, 0.0, 1.0)));
+        multScale([BODY_BC_WITDH,BODY_BC_HEIGHT,BODY_BC_LENGHT]);
+        multDeformY(10);
+        uploadModelView();
+        CUBE.draw(gl, program, mode);
+    }
+    function bodyBottom(){
+        pushMatrix();
+            multTranslation([0,0,BODY_BC_CONNECT])
+            bodyComponentBottom();
+        popMatrix();
+        pushMatrix();
+            multRotationY(180);
+            multTranslation([0,0,BODY_BC_CONNECT])
+            bodyComponentBottom();
+        popMatrix();
+    }
 
+    function bodyComponentTop(){
+        const uLocation = gl.getUniformLocation(program,"color");
+        gl.uniform4fv(uLocation,flatten(vec4(1.0, 1.0, 0.0, 1.0)));
+        multScale([BODY_TC_WITDH,BODY_TC_HEIGHT,BODY_TC_LENGHT]);
+        multDeformY(-15);
+        uploadModelView();
+        CUBE.draw(gl, program, mode);
+    }
+
+    function bodyTop(){
+        pushMatrix();
+            multTranslation([0,0,BODY_TC_CONNECT]);
+            bodyComponentTop();
+        popMatrix();
+        pushMatrix();
+            multRotationY(180);
+            multTranslation([0,0,BODY_TC_CONNECT]);
+            bodyComponentTop();
+        popMatrix();
+    }
+
+    function bodyConnecter(){
+        const uLocation = gl.getUniformLocation(program,"color");
+        gl.uniform4fv(uLocation,flatten(vec4(0.75, 0.75, 0.0, 1.0)));
+        multScale([BODY_TC_WITDH, 1, 33.5]);
+        uploadModelView();
+        CUBE.draw(gl, program, mode);
+    }
+
+    function body(){
+        pushMatrix();
+            bodyBottom();
+        popMatrix();
+        
+        pushMatrix();
+            multTranslation([0,BODY_BC_HEIGHT/2-0.5,0]);
+            bodyConnecter();
+        popMatrix();
+
+        multTranslation([0,BODY_BC_HEIGHT-1,0]);
+        pushMatrix();
+            bodyTop();
+        popMatrix();
+
+    }
 
     function render()
     {
@@ -256,14 +335,24 @@ function setup(shaders)
         pushMatrix();
             floor();
         popMatrix();
+        
         multTranslation([0,0,move]);
         pushMatrix();
-            mainBody();
-        popMatrix();
+        
         pushMatrix();
-            multRotationY(cannonAngle);
-            hatchAndCannon();
+            body();
         popMatrix();
+        
+        popMatrix();
+
+        
+        // pushMatrix();
+        //     mainBody();
+        // popMatrix();
+        // pushMatrix();
+        //     multRotationY(cannonAngle);
+        //     hatchAndCannon();
+        // popMatrix();
     }
 }
 

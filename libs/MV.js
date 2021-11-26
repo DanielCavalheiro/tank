@@ -430,14 +430,14 @@ function deformX(theta){
 function deformY(theta){
     var a = Math.tan ( radians(theta) );
     var dx= mat4()
-    dx[0][1]= a;
+    dx[2][1]= a;
     return dx;
 }
 
 function deformZ(theta){
-    var e = Math.tan ( radians(theta) );
+    var b = Math.tan ( radians(theta) );
     var dx= mat4()
-    dx[2][0]= e;
+    dx[0][2]= b;
     return dx;
 }
 //nao sei se esta completamento correto porque nao esta exatamente como nos slides
