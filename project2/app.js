@@ -1,18 +1,19 @@
 import { buildProgramFromSources, loadShadersFromURLS, setupWebGL } from "../libs/utils.js";
-import { ortho, lookAt, flatten, vec4, rotateY, translate, mult, inverse, scalem, mat4 } from "../libs/MV.js";
-import {modelView, loadMatrix, multRotationY, multScale, multTranslation, popMatrix, pushMatrix, multDeformX, multDeformY, multDeformZ} from "../libs/stack.js";
+import { ortho, lookAt, flatten, vec4, rotateY, translate, mult, inverse, scalem, mat4, rotateZ } from "../libs/MV.js";
+import {modelView, loadMatrix, multRotationY, multScale, multTranslation, popMatrix, pushMatrix, multDeformX, multDeformY, multDeformZ, multRotationX} from "../libs/stack.js";
 
 import * as SPHERE from '../libs/sphere.js';
 import * as CUBE from '../libs/cube.js';
+import * as CYLINDER from "../libs/cylinder.js";
 
 /** @type WebGLRenderingContext */
 let gl;
 
-let time = 0;           // Global simulation time in days
-let speed = 1/60.0;     // Speed (how many days added to time on each render pass
 let mode;               // Drawing mode (gl.LINES or gl.TRIANGLES)
 let animation = true;   // Animation is running
 let eye, at, up;
+let cannonAngle=0, cannonAngle2=0;
+let move=0;
 
 const VP_DISTANCE = 50;
 const TILE_LENGHT=20;
@@ -46,6 +47,26 @@ function setup(shaders)
             case 'S':
                 mode = gl.TRIANGLES;
                 break;
+            case 'w':
+                if(cannonAngle2>-45)
+                    cannonAngle2-=1;
+                break;
+            case 's':
+                if(cannonAngle2<20)
+                    cannonAngle2+=1;
+                break;
+            case 'a':
+             cannonAngle+=1;
+                break;
+            case 'd':
+             cannonAngle-=1;
+                break;    
+            case "ArrowUp":
+                move+=1;
+                break;
+            case "ArrowDown":
+                move-=1;
+                break;
             case '1':
                 eye=[VP_DISTANCE,0,0];
                 at=[0,0,0];
@@ -78,6 +99,7 @@ function setup(shaders)
     gl.clearColor(0.23, 0.48, 0.97, 1.0);
     CUBE.init(gl);
     SPHERE.init(gl);
+    CYLINDER.init(gl);
     gl.enable(gl.DEPTH_TEST);   // Enables Z-buffer depth test
     
     window.requestAnimationFrame(render);
@@ -99,19 +121,72 @@ function setup(shaders)
         gl.uniformMatrix4fv(gl.getUniformLocation(program, "mModelView"), false, flatten(modelView()));
     }
 
-    function Sun()
+    function mainBody()
     {
-        // Don't forget to scale the sun, rotate it around the y axis at the correct speed
         const uLocation = gl.getUniformLocation(program,"color");
         gl.uniform4fv(uLocation,flatten(vec4(1.0, 1.0, 0.0, 1.0)));
-        multScale([10,10,30]);
-        multTranslation([0,0,0]);
+        pushMatrix();
+        multScale([8,4,30]); 
         multDeformY(30);
+        multTranslation([0,0,0]);
         // Send the current modelview matrix to the vertex shader
         uploadModelView();
-
-        // Draw a sphere representing the sun
         CUBE.draw(gl, program, mode);
+        multDeformY(-30);
+        multDeformY(-30);
+        multTranslation([-1,0,0]);
+        uploadModelView();
+        CUBE.draw(gl,program,mode);
+        popMatrix();
+
+
+        gl.uniform4fv(uLocation,flatten(vec4(0.0, 1.0, 1.0, 1.0)));
+        pushMatrix();
+        multScale([8,4,30]);
+        rotateZ(180); 
+        multDeformY(-30);
+        multTranslation([0,1,0]);
+        // Send the current modelview matrix to the vertex shader
+        uploadModelView();
+        CUBE.draw(gl, program, mode);
+        popMatrix();
+        pushMatrix();
+        multScale([8,4,30]);
+        rotateZ(180);
+        multDeformY(30);
+        multTranslation([-1,1,0]);
+        uploadModelView();
+        CUBE.draw(gl,program,mode);
+        popMatrix();
+
+    }
+
+    function hatchAndCannon(){
+        pushMatrix();
+        hatch();
+        popMatrix();
+        pushMatrix();
+            multRotationX(cannonAngle2);
+            cannon();
+        popMatrix();
+
+    }
+
+    function hatch(){
+        const uLocation = gl.getUniformLocation(program,"color");
+        gl.uniform4fv(uLocation,flatten(vec4(1.0, 0.0, 1.0, 1.0)));
+        multScale([8,8,8]);
+        multTranslation([-0.5,0.7,-0.2]);
+        uploadModelView();
+        SPHERE.draw(gl,program,mode);
+    }
+
+    function cannon(){
+        multScale([4,4,20]);
+        multRotationX(90);
+        multTranslation([-2,0.5,-4]);
+        uploadModelView();
+        CYLINDER.draw(gl,program,mode);
     }
 
     function redTile(){
@@ -168,7 +243,6 @@ function setup(shaders)
 
     function render()
     {
-        if(animation) time += speed;
         window.requestAnimationFrame(render);
 
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -180,9 +254,16 @@ function setup(shaders)
         loadMatrix(lookAt(eye, at, up));
 
         pushMatrix();
-        floor();
+            floor();
         popMatrix();
-        Sun();
+        multTranslation([0,0,move]);
+        pushMatrix();
+            mainBody();
+        popMatrix();
+        pushMatrix();
+            multRotationY(cannonAngle);
+            hatchAndCannon();
+        popMatrix();
     }
 }
 
