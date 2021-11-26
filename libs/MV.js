@@ -4,7 +4,7 @@
 export { 
     radians, vec2, vec3, vec4, mat2, mat3, mat4, 
     equal, add, subtract, mult, 
-    translate, rotate, rotateX, rotateY, rotateZ, 
+    translate, rotate, rotateX, rotateY, rotateZ, deformX, deformY, deformZ,
          scalem, scale, 
          lookAt, ortho, perspective, 
          transpose, dot, negate, cross, length, 
@@ -419,6 +419,28 @@ function rotateZ(theta) {
   return rz;
 }
 
+//programei estas funçoes que permitem deformar objetos no mesmo estilo das outras dados pelo prof
+function deformX(theta){
+    var c = Math.tan ( radians(theta) );
+    var dx= mat4()
+    dx[1][0]= c;
+    return dx;
+}
+
+function deformY(theta){
+    var a = Math.tan ( radians(theta) );
+    var dx= mat4()
+    dx[0][1]= a;
+    return dx;
+}
+
+function deformZ(theta){
+    var e = Math.tan ( radians(theta) );
+    var dx= mat4()
+    dx[2][0]= e;
+    return dx;
+}
+//nao sei se esta completamento correto porque nao esta exatamente como nos slides
 
 //----------------------------------------------------------------------------
 

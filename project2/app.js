@@ -1,6 +1,6 @@
 import { buildProgramFromSources, loadShadersFromURLS, setupWebGL } from "../libs/utils.js";
-import { ortho, lookAt, flatten, vec4, rotateY, translate, mult, inverse, scalem } from "../libs/MV.js";
-import {modelView, loadMatrix, multRotationY, multScale, multTranslation, popMatrix, pushMatrix} from "../libs/stack.js";
+import { ortho, lookAt, flatten, vec4, rotateY, translate, mult, inverse, scalem, mat4 } from "../libs/MV.js";
+import {modelView, loadMatrix, multRotationY, multScale, multTranslation, popMatrix, pushMatrix, multDeformX, multDeformY, multDeformZ} from "../libs/stack.js";
 
 import * as SPHERE from '../libs/sphere.js';
 import * as CUBE from '../libs/cube.js';
@@ -29,7 +29,7 @@ function setup(shaders)
 
     let mProjection = ortho(-VP_DISTANCE*aspect,VP_DISTANCE*aspect, -VP_DISTANCE, VP_DISTANCE,-3*VP_DISTANCE,3*VP_DISTANCE);
     
-    mode = gl.LINES; 
+    mode = gl.TRIANGLES; 
 
     eye= [VP_DISTANCE,VP_DISTANCE,VP_DISTANCE];
     at=[0,0,0];
@@ -67,10 +67,10 @@ function setup(shaders)
                 up=[0,1,0];
                 break;
             case '+':
-                mProjection=mult(mProjection, scalem( 1.01, 1.01, 1.01 ));
+                mProjection=mult(mProjection, scalem( 1.05, 1.05, 1.05 ));
                 break;
             case '-':
-                mProjection=mult(mProjection, scalem( 1/1.01, 1/1.01, 1/1.01 ));
+                mProjection=mult(mProjection, scalem( 1/1.05, 1/1.05, 1/1.05 ));
                 break;
         }
     }
@@ -106,6 +106,7 @@ function setup(shaders)
         gl.uniform4fv(uLocation,flatten(vec4(1.0, 1.0, 0.0, 1.0)));
         multScale([10,10,30]);
         multTranslation([0,0,0]);
+        multDeformY(30);
         // Send the current modelview matrix to the vertex shader
         uploadModelView();
 
@@ -116,7 +117,7 @@ function setup(shaders)
     function redTile(){
         const uLocation = gl.getUniformLocation(program,"color");
         gl.uniform4fv(uLocation,flatten(vec4(0.04,0.94,0.1,1.0)));
-        multScale([TILE_LENGHT,0,TILE_LENGHT]);
+        multScale([TILE_LENGHT,TILE_LENGHT/20,TILE_LENGHT]);
         uploadModelView();
         CUBE.draw(gl,program,mode);
     }
@@ -124,18 +125,24 @@ function setup(shaders)
     function greyTile(){
         const uLocation = gl.getUniformLocation(program,"color");
         gl.uniform4fv(uLocation,flatten(vec4(0.1,0.47,0.13,0.35)));
-        multScale([TILE_LENGHT,0,TILE_LENGHT]);
+        multScale([TILE_LENGHT, TILE_LENGHT/20 ,TILE_LENGHT]);
         uploadModelView();
         CUBE.draw(gl,program,mode);
     }
 
     function floor(){
-        multTranslation([-FLOOR_SIZE/2*TILE_LENGHT, 0, -FLOOR_SIZE/2*TILE_LENGHT]);
+        multTranslation([-FLOOR_SIZE/2*TILE_LENGHT, -TILE_LENGHT/2, -FLOOR_SIZE/2*TILE_LENGHT]);
         for (let i = 0; i < FLOOR_SIZE; i++) {
             multTranslation([0, 0, TILE_LENGHT]);
-            if(i%2==0)
-                multTranslation([TILE_LENGHT, 0, 0]);
+            
             pushMatrix();
+            if(i%2==0){
+                pushMatrix();
+                greyTile()
+                popMatrix();
+                multTranslation([TILE_LENGHT, 0, 0]);
+            }
+               
             for (let j = 0; j < FLOOR_SIZE/2; j++) {
                 pushMatrix();
                 redTile();
@@ -147,9 +154,13 @@ function setup(shaders)
                 popMatrix();
                 multTranslation([TILE_LENGHT, 0, 0])
             }
+            
+            if(i%2==1){
+                pushMatrix();
+                redTile();
+                popMatrix()
+            }
             popMatrix();
-            if(i%2==0)
-                multTranslation([-TILE_LENGHT, 0, 0]);
         }
     }
 
@@ -171,7 +182,6 @@ function setup(shaders)
         pushMatrix();
         floor();
         popMatrix();
-
         Sun();
     }
 }

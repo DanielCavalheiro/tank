@@ -1,5 +1,5 @@
-import { mat4, mult, translate, scalem, rotateX, rotateY, rotateZ } from "./MV.js";
-export {modelView, loadIdentity, loadMatrix, pushMatrix, popMatrix, multMatrix, multTranslation, multScale, multRotationX, multRotationY, multRotationZ};
+import { mat4, mult, translate, scalem, rotateX, rotateY, rotateZ, deformX, deformY, deformZ } from "./MV.js";
+export {modelView, loadIdentity, loadMatrix, pushMatrix, popMatrix, multMatrix, multTranslation, multScale, multRotationX, multRotationY, multRotationZ, multDeformX, multDeformY, multDeformZ};
 
 
 /**
@@ -70,4 +70,19 @@ function multRotationY(angle) {
 // Appens a rotation around Z to the modelView
 function multRotationZ(angle) {
     stack[stack.length-1] = mult(stack[stack.length-1], rotateZ(angle));
+}
+
+//Deformaçao no X to the modelView
+function multDeformX(angle) {
+    stack[stack.length-1] = mult(stack[stack.length-1], deformX(angle));
+}
+
+//Deformaçao no X to the modelView
+function multDeformY(angle) {
+    stack[stack.length-1] = mult(stack[stack.length-1], deformY(angle));
+}
+
+//Deformaçao no X to the modelView
+function multDeformZ(angle) {
+    stack[stack.length-1] = mult(stack[stack.length-1], deformZ(angle));
 }
