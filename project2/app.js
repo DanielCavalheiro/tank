@@ -52,6 +52,10 @@ const CANNON_C_WIDTH=10;
 const CANNON_C_HEIGHT=2;
 const CANNON_C_CONNECT=1.5;
 
+//Barrel
+const BARREL_LENGTH=25;
+const BARREL_RADIUS=1.75;
+
 
 function setup(shaders)
 {
@@ -82,11 +86,11 @@ function setup(shaders)
                 mode = gl.TRIANGLES;
                 break;
             case 'w':
-                if(cannonAngle2>-45)
+                if(cannonAngle2>-30)
                     cannonAngle2-=1;
                 break;
             case 's':
-                if(cannonAngle2<20)
+                if(cannonAngle2<0)
                     cannonAngle2+=1;
                 break;
             case 'a':
@@ -383,9 +387,10 @@ function setup(shaders)
     }
 
     function cannon(){
+        multRotationY(cannonAngle);
         pushMatrix();
             
-            multTranslation([0, BODY_HEIGHT-3, 5]);
+            multTranslation([0, BODY_HEIGHT-3, -5]);
             pushMatrix();
                 cannonBottom();
             popMatrix();
@@ -399,28 +404,38 @@ function setup(shaders)
             pushMatrix();
                 cannonTop();
             popMatrix();
+            pushMatrix();
+                multTranslation([0,-CANNON_C_HEIGHT+0.5,CANNON_C_LENGHT]);
+                barrel();
+            popMatrix();
         
         popMatrix();
     }
 
-    function hatch(){
+    function barrel(){
+        const uLocation = gl.getUniformLocation(program,"color");
+        gl.uniform4fv(uLocation,flatten(vec4(1, 0.0, 0.0, 1.0)));
+        multRotationX(cannonAngle2);
         pushMatrix();
-            hatchBottom();
+            multScale([BARREL_RADIUS,BARREL_RADIUS,BARREL_LENGTH/4]);
+            multRotationX(90);
+            uploadModelView();
+            CYLINDER.draw(gl, program, mode);
         popMatrix();
-        
+        multTranslation([0,0,BARREL_LENGTH/4]);
         pushMatrix();
-            multTranslation([0,HATCH_BC_HEIGHT/2-0.5,0]);
-            hatchConnecter();
+            multScale([BARREL_RADIUS*5/7,BARREL_RADIUS*5/7,BARREL_LENGTH/2]);
+            multRotationX(90);
+            uploadModelView();
+            CYLINDER.draw(gl, program, mode);
         popMatrix();
-
-        multTranslation([0,HATCH_BC_HEIGHT-1,0]);
+        multTranslation([0,0,BARREL_LENGTH/2-BARREL_LENGTH/4]);
         pushMatrix();
-            hatchTop();
+            multScale([BARREL_RADIUS,BARREL_RADIUS,BARREL_LENGTH/4]);
+            multRotationX(90);
+            uploadModelView();
+            CYLINDER.draw(gl, program, mode);
         popMatrix();
-    }
-
-    function hatchBottom(){
-
     }
 
     function render()
