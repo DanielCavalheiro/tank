@@ -13,6 +13,7 @@ let gl;
 let mode;               // Drawing mode (gl.LINES or gl.TRIANGLES)
 let eye, at, up;
 let cannonAngle=0, cannonAngle2=0;
+let wheelAngle=0;
 let move=0;
 
 const VP_DISTANCE = 30;
@@ -36,9 +37,10 @@ const BODY_TC_HEIGHT=4
 const BODY_TC_CONNECT=6
 //Wheels
 const NUMBER_WHEELS=8;
-//constante temporaria ??????????????????????????????????????????????
-const WHEEL_RADIUS=4;
+const WHEEL_RADIUS=BODY_BC_LENGHT*2/(NUMBER_WHEELS/2)/2;
 const WHEEL_WIDTH=7;
+//Movement
+const SPEED=0.25;
 
 function setup(shaders)
 {
@@ -83,10 +85,12 @@ function setup(shaders)
              cannonAngle-=1;
                 break;    
             case "ArrowUp":
-                move+=1;
+                move+=SPEED;
+                wheelAngle+=360*SPEED/2*Math.PI*WHEEL_RADIUS;
                 break;
             case "ArrowDown":
-                move-=1;
+                move-=SPEED;
+                wheelAngle-=360*SPEED/2*Math.PI*WHEEL_RADIUS;
                 break;
             case '1':
                 eye=[VP_DISTANCE,0,0];
@@ -141,74 +145,6 @@ function setup(shaders)
     function uploadModelView()
     {
         gl.uniformMatrix4fv(gl.getUniformLocation(program, "mModelView"), false, flatten(modelView()));
-    }
-
-    function mainBody()
-    {
-        const uLocation = gl.getUniformLocation(program,"color");
-        gl.uniform4fv(uLocation,flatten(vec4(1.0, 1.0, 0.0, 1.0)));
-        pushMatrix();
-        multScale([8,4,30]); 
-        multDeformY(30);
-        multTranslation([0,0,0]);
-        // Send the current modelview matrix to the vertex shader
-        uploadModelView();
-        CUBE.draw(gl, program, mode);
-        multDeformY(-30);
-        multDeformY(-30);
-        multTranslation([-1,0,0]);
-        uploadModelView();
-        CUBE.draw(gl,program,mode);
-        popMatrix();
-
-
-        gl.uniform4fv(uLocation,flatten(vec4(0.0, 1.0, 1.0, 1.0)));
-        pushMatrix();
-        multScale([8,4,30]);
-        rotateZ(180); 
-        multDeformY(-30);
-        multTranslation([0,1,0]);
-        // Send the current modelview matrix to the vertex shader
-        uploadModelView();
-        CUBE.draw(gl, program, mode);
-        popMatrix();
-        pushMatrix();
-        multScale([8,4,30]);
-        rotateZ(180);
-        multDeformY(30);
-        multTranslation([-1,1,0]);
-        uploadModelView();
-        CUBE.draw(gl,program,mode);
-        popMatrix();
-
-    }
-
-    function hatchAndCannon(){
-        pushMatrix();
-        hatch();
-        popMatrix();
-        pushMatrix();
-            multRotationX(cannonAngle2);
-            cannon();
-        popMatrix();
-
-    }
-
-    function hatch(){
-        const uLocation = gl.getUniformLocation(program,"color");
-        gl.uniform4fv(uLocation,flatten(vec4(1.0, 0.0, 1.0, 1.0)));
-        multScale([8,8,8]);
-        multTranslation([-0.5,0.7,-0.2]);
-        uploadModelView();
-        SPHERE.draw(gl,program,mode);
-    }
-
-    function cannon(){
-        multScale([4,4,20]);
-        multRotationX(90);
-        multTranslation([-2,0.5,-4]);
-        uploadModelView();
-        CYLINDER.draw(gl,program,mode);
     }
 
     function redTile(){
@@ -327,16 +263,31 @@ function setup(shaders)
 
     }
 
-    //TODO, I ll do this tomorrow
     function drawWheels(){
         for(let i = 0; i<NUMBER_WHEELS/2;i++){
             pushMatrix();
-                multTranslation([BODY_BC_WITDH/2,-BODY_BC_HEIGHT/2,BODY_BC_LENGHT/2+1.5-i*(BODY_BC_LENGHT*2/NUMBER_WHEELS/2)]);
-                wheel();
+                multTranslation([BODY_BC_WITDH/2,-BODY_BC_HEIGHT/2,BODY_BC_LENGHT-WHEEL_RADIUS-i*(WHEEL_RADIUS*2)]);
+                multRotationX(wheelAngle);
+                pushMatrix();
+                    wheel();
+                popMatrix();
+                pushMatrix();
+                    insideWheel();
+                popMatrix();
             popMatrix();
             pushMatrix();
-                multTranslation([-BODY_BC_WITDH/2,-BODY_BC_HEIGHT/2,BODY_BC_LENGHT/2+1.5-i*(WHEEL_RADIUS*2)]);
-                wheel();
+                multTranslation([-BODY_BC_WITDH/2,-BODY_BC_HEIGHT/2,BODY_BC_LENGHT-WHEEL_RADIUS-i*(WHEEL_RADIUS*2)]);
+                multRotationX(wheelAngle);
+                pushMatrix();
+                    wheel();
+                popMatrix();
+                pushMatrix();
+                    insideWheel();
+                popMatrix();
+                pushMatrix();
+                    multTranslation([BODY_BC_WITDH/2,0,0]);
+                    axis();
+                popMatrix();
             popMatrix();
         }
     }
@@ -344,10 +295,54 @@ function setup(shaders)
     function wheel(){
         const uLocation = gl.getUniformLocation(program,"color");
         gl.uniform4fv(uLocation,flatten(vec4(0.0, 0.0, 0.0, 1.0)));
-        multScale([WHEEL_WIDTH,BODY_BC_LENGHT*2/NUMBER_WHEELS/2,BODY_BC_LENGHT*2/NUMBER_WHEELS/2]);
+        multScale([WHEEL_WIDTH,WHEEL_RADIUS,WHEEL_RADIUS]);
         multRotationZ(90);
         uploadModelView();
         TORUS.draw(gl, program, mode);
+    }
+
+    function insideWheel(){
+        const uLocation = gl.getUniformLocation(program,"color");
+        gl.uniform4fv(uLocation,flatten(vec4(0.0, 0.0, 1.0, 1.0)));
+        multScale([WHEEL_WIDTH/4,WHEEL_RADIUS,WHEEL_RADIUS]);
+        multRotationZ(90);
+        uploadModelView();
+        CYLINDER.draw(gl, program, mode);
+    }
+
+    function axis(){
+        const uLocation = gl.getUniformLocation(program,"color");
+        gl.uniform4fv(uLocation,flatten(vec4(0.0, 0.0, 0.0, 1.0)));
+        multScale([BODY_BC_WITDH,WHEEL_RADIUS/2,WHEEL_RADIUS/2]);
+        multRotationZ(90);
+        uploadModelView();
+        CYLINDER.draw(gl, program, mode);
+    }
+
+    function hatchAndCannon(){
+        pushMatrix();
+            hatch();
+        popMatrix();
+    }
+
+    function hatch(){
+        pushMatrix();
+            hatchBottom();
+        popMatrix();
+        
+        pushMatrix();
+            multTranslation([0,HATCH_BC_HEIGHT/2-0.5,0]);
+            hatchConnecter();
+        popMatrix();
+
+        multTranslation([0,HATCH_BC_HEIGHT-1,0]);
+        pushMatrix();
+            hatchTop();
+        popMatrix();
+    }
+
+    function hatchBottom(){
+
     }
 
     function render()
@@ -367,13 +362,16 @@ function setup(shaders)
         popMatrix();
         
         multTranslation([0,0,move]);
-        pushMatrix();
+        //pushMatrix();
         
         pushMatrix();
             body();
         popMatrix();
         pushMatrix();
             drawWheels();
+        popMatrix();
+        pushMatrix();
+            hatchAndCannon();
         popMatrix();
         popMatrix();
 
