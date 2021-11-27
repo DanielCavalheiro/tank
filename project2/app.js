@@ -5,6 +5,7 @@ import {modelView, loadMatrix, multRotationY, multScale, multTranslation, popMat
 import * as SPHERE from '../libs/sphere.js';
 import * as CUBE from '../libs/cube.js';
 import * as CYLINDER from "../libs/cylinder.js";
+import * as TORUS from "../libs/torus.js";
 
 /** @type WebGLRenderingContext */
 let gl;
@@ -16,7 +17,7 @@ let move=0;
 
 const VP_DISTANCE = 30;
 
-//Primitive dimensios constantes-----------------------------------------------------------------------------------------
+//Primitive dimensions constantes-----------------------------------------------------------------------------------------
 
 //Floor
 const TILE_LENGHT=20;
@@ -33,6 +34,11 @@ const BODY_TC_LENGHT=17
 const BODY_TC_WITDH=10
 const BODY_TC_HEIGHT=4
 const BODY_TC_CONNECT=6
+//Wheels
+const NUMBER_WHEELS=8;
+//constante temporaria ??????????????????????????????????????????????
+const WHEEL_RADIUS=4;
+const WHEEL_WIDTH=7;
 
 function setup(shaders)
 {
@@ -115,6 +121,7 @@ function setup(shaders)
     CUBE.init(gl);
     SPHERE.init(gl);
     CYLINDER.init(gl);
+    TORUS.init(gl);
     gl.enable(gl.DEPTH_TEST);   // Enables Z-buffer depth test
     
     window.requestAnimationFrame(render);
@@ -320,6 +327,29 @@ function setup(shaders)
 
     }
 
+    //TODO, I ll do this tomorrow
+    function drawWheels(){
+        for(let i = 0; i<NUMBER_WHEELS/2;i++){
+            pushMatrix();
+                multTranslation([BODY_BC_WITDH/2,-BODY_BC_HEIGHT/2,BODY_BC_LENGHT/2+1.5-i*(BODY_BC_LENGHT*2/NUMBER_WHEELS/2)]);
+                wheel();
+            popMatrix();
+            pushMatrix();
+                multTranslation([-BODY_BC_WITDH/2,-BODY_BC_HEIGHT/2,BODY_BC_LENGHT/2+1.5-i*(WHEEL_RADIUS*2)]);
+                wheel();
+            popMatrix();
+        }
+    }
+
+    function wheel(){
+        const uLocation = gl.getUniformLocation(program,"color");
+        gl.uniform4fv(uLocation,flatten(vec4(0.0, 0.0, 0.0, 1.0)));
+        multScale([WHEEL_WIDTH,BODY_BC_LENGHT*2/NUMBER_WHEELS/2,BODY_BC_LENGHT*2/NUMBER_WHEELS/2]);
+        multRotationZ(90);
+        uploadModelView();
+        TORUS.draw(gl, program, mode);
+    }
+
     function render()
     {
         window.requestAnimationFrame(render);
@@ -342,7 +372,9 @@ function setup(shaders)
         pushMatrix();
             body();
         popMatrix();
-        
+        pushMatrix();
+            drawWheels();
+        popMatrix();
         popMatrix();
 
         
