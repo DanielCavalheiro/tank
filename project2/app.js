@@ -27,20 +27,31 @@ const FLOOR_SIZE=30;
 //Tank Body
 //BottomComponent
 const BODY_BC_LENGHT=15;
-const BODY_BC_WITDH=8;
+const BODY_BC_WITDH=15;
 const BODY_BC_HEIGHT=6;
 const BODY_BC_CONNECT=6;
 //Top Component
-const BODY_TC_LENGHT=17
-const BODY_TC_WITDH=10
-const BODY_TC_HEIGHT=4
-const BODY_TC_CONNECT=6
+const BODY_TC_LENGHT=16;
+const BODY_TC_WITDH=16;
+const BODY_TC_HEIGHT=4;
+const BODY_TC_CONNECT=6;
+//Full Body
+const BODY_HEIGHT=BODY_TC_HEIGHT+BODY_BC_HEIGHT;
+
 //Wheels
 const NUMBER_WHEELS=8;
 const WHEEL_RADIUS=BODY_BC_LENGHT*2/(NUMBER_WHEELS/2)/2;
 const WHEEL_WIDTH=7;
 //Movement
 const SPEED=0.25;
+
+//Cannon
+//Bottom component
+const CANNON_C_LENGHT=6;
+const CANNON_C_WIDTH=10;
+const CANNON_C_HEIGHT=2;
+const CANNON_C_CONNECT=1.5;
+
 
 function setup(shaders)
 {
@@ -199,9 +210,9 @@ function setup(shaders)
 
     function bodyComponentBottom(){
         const uLocation = gl.getUniformLocation(program,"color");
-        gl.uniform4fv(uLocation,flatten(vec4(0.5, 0.5, 0.0, 1.0)));
+        gl.uniform4fv(uLocation,flatten(vec4(0.25, 0.25, 0.0, 1.0)));
         multScale([BODY_BC_WITDH,BODY_BC_HEIGHT,BODY_BC_LENGHT]);
-        multDeformY(10);
+        multDeformY(15);
         uploadModelView();
         CUBE.draw(gl, program, mode);
     }
@@ -219,7 +230,7 @@ function setup(shaders)
 
     function bodyComponentTop(){
         const uLocation = gl.getUniformLocation(program,"color");
-        gl.uniform4fv(uLocation,flatten(vec4(1.0, 1.0, 0.0, 1.0)));
+        gl.uniform4fv(uLocation,flatten(vec4(0.5, 0.5, 0, 1.0)));
         multScale([BODY_TC_WITDH,BODY_TC_HEIGHT,BODY_TC_LENGHT]);
         multDeformY(-15);
         uploadModelView();
@@ -240,8 +251,8 @@ function setup(shaders)
 
     function bodyConnecter(){
         const uLocation = gl.getUniformLocation(program,"color");
-        gl.uniform4fv(uLocation,flatten(vec4(0.75, 0.75, 0.0, 1.0)));
-        multScale([BODY_TC_WITDH, 1, 33.5]);
+        gl.uniform4fv(uLocation,flatten(vec4(0.5, 0.5, 0.0, 1.0)));
+        multScale([BODY_TC_WITDH, 1, 32]);
         uploadModelView();
         CUBE.draw(gl, program, mode);
     }
@@ -319,9 +330,76 @@ function setup(shaders)
         CYLINDER.draw(gl, program, mode);
     }
 
-    function hatchAndCannon(){
+    function cannonBottomComponent(){
+        const uLocation = gl.getUniformLocation(program,"color");
+        gl.uniform4fv(uLocation,flatten(vec4(0.75, 0.75, 0, 1.0)));
+        multScale([CANNON_C_WIDTH,CANNON_C_HEIGHT,CANNON_C_LENGHT]);
+        multDeformY(20);
+        uploadModelView();
+        CUBE.draw(gl, program, mode);
+    }
+
+    function cannonBottom(){
         pushMatrix();
-            hatch();
+            multTranslation([0,0,CANNON_C_CONNECT])
+            cannonBottomComponent();
+        popMatrix();
+        pushMatrix();
+            multRotationY(180);
+            multTranslation([0,0,CANNON_C_CONNECT])
+            cannonBottomComponent();
+        popMatrix();
+    }
+
+   
+
+    function cannonConecter(){
+        const uLocation = gl.getUniformLocation(program,"color");
+        gl.uniform4fv(uLocation,flatten(vec4(0.75, 0.75, 0, 1.0)));
+        multScale([CANNON_C_WIDTH,CANNON_C_HEIGHT,CANNON_C_LENGHT+5]);
+        uploadModelView();
+        CUBE.draw(gl, program, mode);
+    }
+
+    function cannonTopComponent(){
+        const uLocation = gl.getUniformLocation(program,"color");
+        gl.uniform4fv(uLocation,flatten(vec4(0.75, 0.75, 0, 1.0)));
+        multScale([CANNON_C_WIDTH,CANNON_C_HEIGHT,CANNON_C_LENGHT]);
+        multDeformY(-20);
+        uploadModelView();
+        CUBE.draw(gl, program, mode);
+    }
+
+    function cannonTop(){
+        pushMatrix();
+            multTranslation([0,0,CANNON_C_CONNECT])
+            cannonTopComponent();
+        popMatrix();
+        pushMatrix();
+            multRotationY(180);
+            multTranslation([0,0,CANNON_C_CONNECT])
+            cannonTopComponent();
+        popMatrix();
+    }
+
+    function cannon(){
+        pushMatrix();
+            
+            multTranslation([0, BODY_HEIGHT-3, 5]);
+            pushMatrix();
+                cannonBottom();
+            popMatrix();
+            
+            multTranslation([0, CANNON_C_HEIGHT, 0]);
+            pushMatrix();
+                cannonConecter();
+            popMatrix();
+            
+            multTranslation([0, CANNON_C_HEIGHT, 0]);
+            pushMatrix();
+                cannonTop();
+            popMatrix();
+        
         popMatrix();
     }
 
@@ -348,7 +426,7 @@ function setup(shaders)
     function render()
     {
         window.requestAnimationFrame(render);
-
+        
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         
         gl.useProgram(program);
@@ -361,18 +439,19 @@ function setup(shaders)
             floor();
         popMatrix();
         
+        
         multTranslation([0,0,move]);
-        //pushMatrix();
         
         pushMatrix();
             body();
         popMatrix();
+        
         pushMatrix();
             drawWheels();
         popMatrix();
+        
         pushMatrix();
-            hatchAndCannon();
-        popMatrix();
+            cannon();    
         popMatrix();
 
         
