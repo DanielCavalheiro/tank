@@ -34,7 +34,7 @@ const BODY_BC_CONNECT=6;
 const BODY_TC_LENGHT=16;
 const BODY_TC_WITDH=16;
 const BODY_TC_HEIGHT=4;
-const BODY_TC_CONNECT=6;
+const BODY_TC_CONNECT=5.8;
 //Full Body
 const BODY_HEIGHT=BODY_TC_HEIGHT+BODY_BC_HEIGHT;
 
@@ -43,7 +43,7 @@ const NUMBER_WHEELS=8;
 const WHEEL_RADIUS=BODY_BC_LENGHT*2/(NUMBER_WHEELS/2)/2;
 const WHEEL_WIDTH=7;
 //Movement
-const SPEED=0.25;
+const SPEED=1;
 
 //Cannon
 //Bottom component
@@ -87,17 +87,17 @@ function setup(shaders)
                 break;
             case 'w':
                 if(cannonAngle2>-30)
-                    cannonAngle2-=1;
+                    cannonAngle2-=4;
                 break;
             case 's':
                 if(cannonAngle2<0)
-                    cannonAngle2+=1;
+                    cannonAngle2+=4;
                 break;
             case 'a':
-             cannonAngle+=1;
+             cannonAngle+=4;
                 break;
             case 'd':
-             cannonAngle-=1;
+             cannonAngle-=4;
                 break;    
             case "ArrowUp":
                 move+=SPEED;
@@ -179,7 +179,7 @@ function setup(shaders)
     }
 
     function floor(){
-        multTranslation([-FLOOR_SIZE/2*TILE_LENGHT, -TILE_LENGHT/2, -FLOOR_SIZE/2*TILE_LENGHT]);
+        multTranslation([-FLOOR_SIZE/2*TILE_LENGHT, -TILE_LENGHT/20/2, -FLOOR_SIZE/2*TILE_LENGHT]);
         for (let i = 0; i < FLOOR_SIZE; i++) {
             multTranslation([0, 0, TILE_LENGHT]);
             
@@ -387,24 +387,28 @@ function setup(shaders)
     }
 
     function cannon(){
-        multRotationY(cannonAngle);
+        
         pushMatrix();
             
             multTranslation([0, BODY_HEIGHT-3, -5]);
             pushMatrix();
+                multRotationY(cannonAngle);
                 cannonBottom();
             popMatrix();
             
             multTranslation([0, CANNON_C_HEIGHT, 0]);
             pushMatrix();
+                multRotationY(cannonAngle);
                 cannonConecter();
             popMatrix();
             
             multTranslation([0, CANNON_C_HEIGHT, 0]);
             pushMatrix();
+                multRotationY(cannonAngle);
                 cannonTop();
             popMatrix();
             pushMatrix();
+                multRotationY(cannonAngle);
                 multTranslation([0,-CANNON_C_HEIGHT+0.5,CANNON_C_LENGHT]);
                 barrel();
             popMatrix();
@@ -438,6 +442,21 @@ function setup(shaders)
         popMatrix();
     }
 
+    function tank(){
+        multTranslation([0,BODY_BC_HEIGHT/2+WHEEL_RADIUS/2+WHEEL_RADIUS*0.2,move]);
+        pushMatrix();
+            body();
+        popMatrix();
+        
+        pushMatrix();
+            drawWheels();
+        popMatrix();
+        
+        pushMatrix();
+            cannon();    
+        popMatrix();
+    }
+
     function render()
     {
         window.requestAnimationFrame(render);
@@ -453,30 +472,9 @@ function setup(shaders)
         pushMatrix();
             floor();
         popMatrix();
-        
-        
-        multTranslation([0,0,move]);
-        
         pushMatrix();
-            body();
+            tank();
         popMatrix();
-        
-        pushMatrix();
-            drawWheels();
-        popMatrix();
-        
-        pushMatrix();
-            cannon();    
-        popMatrix();
-
-        
-        // pushMatrix();
-        //     mainBody();
-        // popMatrix();
-        // pushMatrix();
-        //     multRotationY(cannonAngle);
-        //     hatchAndCannon();
-        // popMatrix();
     }
 }
 
