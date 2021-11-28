@@ -176,7 +176,7 @@ function setup(shaders)
         gl.uniformMatrix4fv(gl.getUniformLocation(program, "mModelView"), false, flatten(modelView()));
     }
 
-    function redTile(){
+    function tile1(){
         const uLocation = gl.getUniformLocation(program,"color");
         gl.uniform3fv(uLocation,flatten(vec3(0.04,0.94,0.1)));
         multScale([TILE_LENGHT,TILE_LENGHT/20,TILE_LENGHT]);
@@ -184,7 +184,7 @@ function setup(shaders)
         CUBE.draw(gl,program,mode);
     }
 
-    function greyTile(){
+    function tile2(){
         const uLocation = gl.getUniformLocation(program,"color");
         gl.uniform3fv(uLocation,flatten(vec3(0.1,0.47,0.13)));
         multScale([TILE_LENGHT, TILE_LENGHT/20 ,TILE_LENGHT]);
@@ -200,26 +200,26 @@ function setup(shaders)
             pushMatrix();
             if(i%2==0){
                 pushMatrix();
-                greyTile()
+                tile2()
                 popMatrix();
                 multTranslation([TILE_LENGHT, 0, 0]);
             }
                
             for (let j = 0; j < FLOOR_SIZE/2; j++) {
                 pushMatrix();
-                redTile();
+                tile1();
                 popMatrix()
                 multTranslation([TILE_LENGHT, 0, 0])
                 
                 pushMatrix();
-                greyTile()
+                tile2()
                 popMatrix();
                 multTranslation([TILE_LENGHT, 0, 0])
             }
             
             if(i%2==1){
                 pushMatrix();
-                redTile();
+                tile1();
                 popMatrix()
             }
             popMatrix();
@@ -508,10 +508,7 @@ function setup(shaders)
         if(bulletShot){
             time+=0.01;
             pushMatrix();
-                //Pproj=inverse(mView).STACK.modelView()
-                //loadMatrix(mult(inverse(modelView()),bulletMview));
                 loadMatrix(bulletMview);
-                //loadMatrix(mult(mult(inverse(bulletMview),modelView()),bulletMview));
                 multRotationX(-bulletAngleY);
                 multTranslation([0,0,BARREL_LENGTH/4/2]);
                 let y= BULLET_INITIALV*Math.sin(radians(-bulletAngleY))*time-G/2*time*time;
