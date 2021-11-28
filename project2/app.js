@@ -1,6 +1,6 @@
 import { buildProgramFromSources, loadShadersFromURLS, setupWebGL } from "../libs/utils.js";
-import { ortho, lookAt, flatten, vec4, rotateY, translate, mult, inverse, scalem, mat4, rotateZ } from "../libs/MV.js";
-import {modelView, loadMatrix, multRotationY, multScale, multTranslation, popMatrix, pushMatrix, multDeformX, multDeformY, multDeformZ, multRotationX, multRotationZ} from "../libs/stack.js";
+import { ortho, lookAt, flatten, vec4, rotateY, translate, mult, inverse, scalem, mat4, rotateZ, normalMatrix, vec3, normalize,radians } from "../libs/MV.js";
+import {modelView, loadMatrix, multRotationY, multScale, multTranslation, popMatrix, pushMatrix, multDeformX, multDeformY, multDeformZ, multRotationX, multRotationZ, multMatrix} from "../libs/stack.js";
 
 import * as SPHERE from '../libs/sphere.js';
 import * as CUBE from '../libs/cube.js';
@@ -15,6 +15,10 @@ let eye, at, up;
 let cannonAngle=0, cannonAngle2=0;
 let wheelAngle=0;
 let move=0;
+let bulletMview;
+let bulletShot=false;
+let bulletAngleY=0;
+let time=0;
 
 const VP_DISTANCE = 30;
 
@@ -35,15 +39,17 @@ const BODY_TC_LENGHT=16;
 const BODY_TC_WITDH=16;
 const BODY_TC_HEIGHT=4;
 const BODY_TC_CONNECT=5.8;
+//Conector
+const BODY_C_HEIGHT=1;
 //Full Body
-const BODY_HEIGHT=BODY_TC_HEIGHT+BODY_BC_HEIGHT;
+const BODY_HEIGHT=BODY_TC_HEIGHT+BODY_BC_HEIGHT+BODY_C_HEIGHT;
 
 //Wheels
 const NUMBER_WHEELS=8;
 const WHEEL_RADIUS=BODY_BC_LENGHT*2/(NUMBER_WHEELS/2)/2;
 const WHEEL_WIDTH=7;
 //Movement
-const SPEED=1;
+const SPEED=0.25;
 
 //Cannon
 //Bottom component
@@ -56,6 +62,11 @@ const CANNON_C_CONNECT=1.5;
 const BARREL_LENGTH=25;
 const BARREL_RADIUS=1.75;
 
+//Bullet
+const BULLET_SIZE=1;
+const BULLET_INITIALV=25;
+let bulletStartY=0.7*WHEEL_RADIUS+BODY_BC_HEIGHT+BODY_TC_HEIGHT+CANNON_C_HEIGHT+CANNON_C_HEIGHT/2+BARREL_LENGTH*Math.sin(radians(-bulletAngleY));
+const G=9.8;
 
 function setup(shaders)
 {
@@ -87,25 +98,28 @@ function setup(shaders)
                 break;
             case 'w':
                 if(cannonAngle2>-30)
-                    cannonAngle2-=4;
+                    cannonAngle2-=1;
                 break;
             case 's':
                 if(cannonAngle2<0)
-                    cannonAngle2+=4;
+                    cannonAngle2+=1;
                 break;
             case 'a':
-             cannonAngle+=4;
+             cannonAngle+=1;
                 break;
             case 'd':
-             cannonAngle-=4;
+             cannonAngle-=1;
                 break;    
-            case "ArrowUp":
+            case 'ArrowUp':
                 move+=SPEED;
                 wheelAngle+=360*SPEED/2*Math.PI*WHEEL_RADIUS;
                 break;
-            case "ArrowDown":
+            case 'ArrowDown':
                 move-=SPEED;
                 wheelAngle-=360*SPEED/2*Math.PI*WHEEL_RADIUS;
+                break;
+            case ' ':
+                bulletShot=true;
                 break;
             case '1':
                 eye=[VP_DISTANCE,0,0];
@@ -164,7 +178,7 @@ function setup(shaders)
 
     function redTile(){
         const uLocation = gl.getUniformLocation(program,"color");
-        gl.uniform4fv(uLocation,flatten(vec4(0.04,0.94,0.1,1.0)));
+        gl.uniform3fv(uLocation,flatten(vec3(0.04,0.94,0.1)));
         multScale([TILE_LENGHT,TILE_LENGHT/20,TILE_LENGHT]);
         uploadModelView();
         CUBE.draw(gl,program,mode);
@@ -172,7 +186,7 @@ function setup(shaders)
 
     function greyTile(){
         const uLocation = gl.getUniformLocation(program,"color");
-        gl.uniform4fv(uLocation,flatten(vec4(0.1,0.47,0.13,0.35)));
+        gl.uniform3fv(uLocation,flatten(vec3(0.1,0.47,0.13)));
         multScale([TILE_LENGHT, TILE_LENGHT/20 ,TILE_LENGHT]);
         uploadModelView();
         CUBE.draw(gl,program,mode);
@@ -214,7 +228,7 @@ function setup(shaders)
 
     function bodyComponentBottom(){
         const uLocation = gl.getUniformLocation(program,"color");
-        gl.uniform4fv(uLocation,flatten(vec4(0.25, 0.25, 0.0, 1.0)));
+        gl.uniform3fv(uLocation,flatten(vec3(0.25, 0.25, 0.0)));
         multScale([BODY_BC_WITDH,BODY_BC_HEIGHT,BODY_BC_LENGHT]);
         multDeformY(15);
         uploadModelView();
@@ -234,7 +248,7 @@ function setup(shaders)
 
     function bodyComponentTop(){
         const uLocation = gl.getUniformLocation(program,"color");
-        gl.uniform4fv(uLocation,flatten(vec4(0.5, 0.5, 0, 1.0)));
+        gl.uniform3fv(uLocation,flatten(vec3(0.5, 0.5, 0)));
         multScale([BODY_TC_WITDH,BODY_TC_HEIGHT,BODY_TC_LENGHT]);
         multDeformY(-15);
         uploadModelView();
@@ -255,8 +269,8 @@ function setup(shaders)
 
     function bodyConnecter(){
         const uLocation = gl.getUniformLocation(program,"color");
-        gl.uniform4fv(uLocation,flatten(vec4(0.5, 0.5, 0.0, 1.0)));
-        multScale([BODY_TC_WITDH, 1, 32]);
+        gl.uniform3fv(uLocation,flatten(vec3(0.5, 0.5, 0.0)));
+        multScale([BODY_TC_WITDH, BODY_C_HEIGHT, BODY_TC_LENGHT*2]);
         uploadModelView();
         CUBE.draw(gl, program, mode);
     }
@@ -309,7 +323,7 @@ function setup(shaders)
 
     function wheel(){
         const uLocation = gl.getUniformLocation(program,"color");
-        gl.uniform4fv(uLocation,flatten(vec4(0.0, 0.0, 0.0, 1.0)));
+        gl.uniform3fv(uLocation,flatten(vec3(0.0, 0.0, 0.0)));
         multScale([WHEEL_WIDTH,WHEEL_RADIUS,WHEEL_RADIUS]);
         multRotationZ(90);
         uploadModelView();
@@ -318,7 +332,7 @@ function setup(shaders)
 
     function insideWheel(){
         const uLocation = gl.getUniformLocation(program,"color");
-        gl.uniform4fv(uLocation,flatten(vec4(0.0, 0.0, 1.0, 1.0)));
+        gl.uniform3fv(uLocation,flatten(vec3(0.0, 0.0, 1.0)));
         multScale([WHEEL_WIDTH/4,WHEEL_RADIUS,WHEEL_RADIUS]);
         multRotationZ(90);
         uploadModelView();
@@ -327,7 +341,7 @@ function setup(shaders)
 
     function axis(){
         const uLocation = gl.getUniformLocation(program,"color");
-        gl.uniform4fv(uLocation,flatten(vec4(0.0, 0.0, 0.0, 1.0)));
+        gl.uniform3fv(uLocation,flatten(vec3(0.0, 0.0, 0.0)));
         multScale([BODY_BC_WITDH,WHEEL_RADIUS/2,WHEEL_RADIUS/2]);
         multRotationZ(90);
         uploadModelView();
@@ -336,7 +350,7 @@ function setup(shaders)
 
     function cannonBottomComponent(){
         const uLocation = gl.getUniformLocation(program,"color");
-        gl.uniform4fv(uLocation,flatten(vec4(0.75, 0.75, 0, 1.0)));
+        gl.uniform3fv(uLocation,flatten(vec3(0.75, 0.75, 0)));
         multScale([CANNON_C_WIDTH,CANNON_C_HEIGHT,CANNON_C_LENGHT]);
         multDeformY(20);
         uploadModelView();
@@ -359,15 +373,15 @@ function setup(shaders)
 
     function cannonConecter(){
         const uLocation = gl.getUniformLocation(program,"color");
-        gl.uniform4fv(uLocation,flatten(vec4(0.75, 0.75, 0, 1.0)));
-        multScale([CANNON_C_WIDTH,CANNON_C_HEIGHT,CANNON_C_LENGHT+5]);
+        gl.uniform3fv(uLocation,flatten(vec3(0.75, 0.75, 0)));
+        multScale([CANNON_C_WIDTH,CANNON_C_HEIGHT,CANNON_C_LENGHT*2-CANNON_C_LENGHT*0.15]);
         uploadModelView();
         CUBE.draw(gl, program, mode);
     }
 
     function cannonTopComponent(){
         const uLocation = gl.getUniformLocation(program,"color");
-        gl.uniform4fv(uLocation,flatten(vec4(0.75, 0.75, 0, 1.0)));
+        gl.uniform3fv(uLocation,flatten(vec3(0.75, 0.75, 0)));
         multScale([CANNON_C_WIDTH,CANNON_C_HEIGHT,CANNON_C_LENGHT]);
         multDeformY(-20);
         uploadModelView();
@@ -390,7 +404,7 @@ function setup(shaders)
         
         pushMatrix();
             
-            multTranslation([0, BODY_HEIGHT-3, -5]);
+            multTranslation([0, BODY_HEIGHT-BODY_TC_HEIGHT*2/3, -BODY_TC_LENGHT/3]);
             pushMatrix();
                 multRotationY(cannonAngle);
                 cannonBottom();
@@ -411,6 +425,10 @@ function setup(shaders)
                 multRotationY(cannonAngle);
                 multTranslation([0,-CANNON_C_HEIGHT+0.5,CANNON_C_LENGHT]);
                 barrel();
+                if(bulletShot==false){
+                    bulletMview=modelView();
+                    bulletAngleY=cannonAngle2;
+                }
             popMatrix();
         
         popMatrix();
@@ -418,7 +436,7 @@ function setup(shaders)
 
     function barrel(){
         const uLocation = gl.getUniformLocation(program,"color");
-        gl.uniform4fv(uLocation,flatten(vec4(1, 0.0, 0.0, 1.0)));
+        gl.uniform3fv(uLocation,flatten(vec3(1, 0.0, 0.0)));
         multRotationX(cannonAngle2);
         pushMatrix();
             multScale([BARREL_RADIUS,BARREL_RADIUS,BARREL_LENGTH/4]);
@@ -457,8 +475,20 @@ function setup(shaders)
         popMatrix();
     }
 
+    function bullet(){
+        const uLocation = gl.getUniformLocation(program,"color");
+        gl.uniform3fv(uLocation,flatten(vec3(1, 1.0, 1.0)));
+        multScale([BULLET_SIZE,BULLET_SIZE,BULLET_SIZE]);
+        uploadModelView();
+        SPHERE.draw(gl, program, mode);
+    }
+
     function render()
     {
+        if(time>(BULLET_INITIALV*Math.sin(radians(-bulletAngleY))+Math.sqrt(Math.pow(BULLET_INITIALV*Math.sin(radians(-bulletAngleY)),2)+2*G*bulletStartY))/G){
+            bulletShot=false;
+            time=0;
+        }
         window.requestAnimationFrame(render);
         
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -475,6 +505,23 @@ function setup(shaders)
         pushMatrix();
             tank();
         popMatrix();
+        if(bulletShot){
+            time+=0.01;
+            pushMatrix();
+                //Pproj=inverse(mView).STACK.modelView()
+                //loadMatrix(mult(inverse(modelView()),bulletMview));
+                loadMatrix(bulletMview);
+                //loadMatrix(mult(mult(inverse(bulletMview),modelView()),bulletMview));
+                multRotationX(-bulletAngleY);
+                multTranslation([0,0,BARREL_LENGTH/4/2]);
+                let y= BULLET_INITIALV*Math.sin(radians(-bulletAngleY))*time-G/2*time*time;
+                console.log(y);
+                pushMatrix();
+                    multTranslation([0,y,BULLET_INITIALV*Math.cos(radians(-bulletAngleY))*time]); 
+                    bullet();
+                popMatrix();
+            popMatrix();
+        }
     }
 }
 
