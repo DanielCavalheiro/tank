@@ -19,7 +19,7 @@ let bulletMview;
 let bulletShot=false;
 let bulletAngleX=0,bulletAngleY=0;
 let time=0;
-let bulletEye;
+let bulletEye,bulletUp;
 
 const VP_DISTANCE = 30;
 
@@ -453,6 +453,7 @@ function setup(shaders)
         if(bulletShot==false){
             bulletMview=modelView();
             bulletEye= eye;
+            bulletUp=up;
             bulletAngleX=cannonAngle;
             bulletAngleY=cannonAngle2;
         }
@@ -490,27 +491,28 @@ function setup(shaders)
     function projectile(){
             pushMatrix();
                 loadMatrix(bulletMview);
-                //multRotationX(-bulletAngleY);
+                multRotationX(-bulletAngleY);
                 //multRotationY(-bulletAngleX);
                 multTranslation([0,0,BARREL_LENGTH/4/2]);
-                const M = mult(inverse(lookAt(bulletEye, at, up)),modelView());
+                const M = mult(inverse(lookAt(bulletEye, at, bulletUp)),modelView());
                 const p0= mult(M,vec4(0,0.5,0,1));
-                let v=mult(normalMatrix(M),vec4(BULLET_INITIALV*Math.cos(radians(-bulletAngleY))*(Math.sin(radians(bulletAngleX))),BULLET_INITIALV*Math.sin(radians(-bulletAngleY))-G/2*time,BULLET_INITIALV*Math.cos(radians(-bulletAngleY))*(Math.cos(radians(bulletAngleX))),0)); 
+                let v=mult(normalMatrix(M),//vec4(BULLET_INITIALV*Math.cos(radians(-bulletAngleY))*(Math.sin(radians(bulletAngleX))),BULLET_INITIALV*Math.sin(radians(-bulletAngleY))-G/2*time,BULLET_INITIALV*Math.cos(radians(-bulletAngleY))*(Math.cos(radians(bulletAngleX))),0)); 
+                            vec4(0,BULLET_INITIALV*Math.sin(radians(-bulletAngleY))-G/2*time,BULLET_INITIALV*Math.cos(radians(-bulletAngleY)),0));
             popMatrix();
-                console.log(p0);
-                pushMatrix();
-                    multTranslation([p0[0]+v[0]*time,p0[1]+v[1]*time,p0[2]+v[2]*time]); 
+                //console.log(p0);
+            pushMatrix();
+                multTranslation([p0[0]+v[0]*time,p0[1]+v[1]*time,p0[2]+v[2]*time]); 
                     //multTranslation([p0[0],p0[1],p0[2]]);
-                    bullet();
-                popMatrix();
+                bullet();
+                if(p0[1]+v[1]*time<0){
+                    bulletShot=false;
+                    time=0;
+                }
+            popMatrix();
     }
 
     function render()
     {
-        if(time>3){//(BULLET_INITIALV*Math.sin(radians(-bulletAngleY))+Math.sqrt(Math.pow(BULLET_INITIALV*Math.sin(radians(-bulletAngleY)),2)+2*G*bulletStartY))/G){
-            bulletShot=false;
-            time=0;
-        }
         window.requestAnimationFrame(render);
         
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
