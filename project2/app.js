@@ -535,5 +535,6 @@ function setup(shaders)
     }
 }
 
+
 const urls = ["shader.vert", "shader.frag"];
 loadShadersFromURLS(urls).then(shaders => setup(shaders))
