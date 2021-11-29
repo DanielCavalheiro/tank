@@ -17,11 +17,12 @@ let wheelAngle=0;
 let move=0;
 let bulletMview;
 let bulletShot=false;
-let bulletAngleX=0,bulletAngleY=0;
+let bulletAngleY=0;
 let time=0;
 let bulletEye,bulletUp;
 
 const VP_DISTANCE = 30;
+const TIME_SPEED=0.01;
 
 //Primitive dimensions constantes-----------------------------------------------------------------------------------------
 
@@ -452,7 +453,6 @@ function setup(shaders)
             bulletMview=modelView();
             bulletEye= eye;
             bulletUp=up;
-            bulletAngleX=cannonAngle;
             bulletAngleY=cannonAngle2;
         }
         pushMatrix();
@@ -490,17 +490,14 @@ function setup(shaders)
             pushMatrix();
                 loadMatrix(bulletMview);
                 multRotationX(-bulletAngleY);
-                //multRotationY(-bulletAngleX);
                 multTranslation([0,0,BARREL_LENGTH/4/2]);
                 const M = mult(inverse(lookAt(bulletEye, at, bulletUp)),modelView());
                 const P0= mult(M,vec4(0,0.5,0,1));
-                const V=mult(normalMatrix(M),//vec4(BULLET_INITIALV*Math.cos(radians(-bulletAngleY))*(Math.sin(radians(bulletAngleX))),BULLET_INITIALV*Math.sin(radians(-bulletAngleY))-G/2*time,BULLET_INITIALV*Math.cos(radians(-bulletAngleY))*(Math.cos(radians(bulletAngleX))),0)); 
+                const V=mult(normalMatrix(M), 
                             vec4(0,BULLET_INITIALV*Math.sin(radians(-bulletAngleY))-G/2*time,BULLET_INITIALV*Math.cos(radians(-bulletAngleY)),0));
             popMatrix();
-                //console.log(p0);
             pushMatrix();
                 multTranslation([P0[0]+V[0]*time,P0[1]+V[1]*time,P0[2]+V[2]*time]); 
-                    //multTranslation([p0[0],p0[1],p0[2]]);
                 bullet();
                 if(P0[1]+V[1]*time<0){
                     bulletShot=false;
@@ -528,7 +525,7 @@ function setup(shaders)
             tank();
         popMatrix();
             if(bulletShot){
-                time+=0.01;
+                time+=TIME_SPEED;
                 projectile();
         popMatrix();
         }
