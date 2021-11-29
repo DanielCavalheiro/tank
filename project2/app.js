@@ -19,6 +19,7 @@ let bulletMview;
 let bulletShot=false;
 let bulletAngleY=0;
 let time=0;
+let bulletStartY=0.7*WHEEL_RADIUS+BODY_BC_HEIGHT+BODY_TC_HEIGHT+CANNON_C_HEIGHT+CANNON_C_HEIGHT/2+BARREL_LENGTH*Math.sin(radians(-bulletAngleY));
 
 const VP_DISTANCE = 30;
 
@@ -65,7 +66,6 @@ const BARREL_RADIUS=1.75;
 //Bullet
 const BULLET_SIZE=1;
 const BULLET_INITIALV=25;
-let bulletStartY=0.7*WHEEL_RADIUS+BODY_BC_HEIGHT+BODY_TC_HEIGHT+CANNON_C_HEIGHT+CANNON_C_HEIGHT/2+BARREL_LENGTH*Math.sin(radians(-bulletAngleY));
 const G=9.8;
 
 function setup(shaders)
