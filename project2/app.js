@@ -17,9 +17,9 @@ let wheelAngle=0;
 let move=0;
 let bulletMview;
 let bulletShot=false;
-let bulletAngleY=0;
+let bulletAngleX=0,bulletAngleY=0;
 let time=0;
-let bulletStartY=0.7*WHEEL_RADIUS+BODY_BC_HEIGHT+BODY_TC_HEIGHT+CANNON_C_HEIGHT+CANNON_C_HEIGHT/2+BARREL_LENGTH*Math.sin(radians(-bulletAngleY));
+let bulletEye;
 
 const VP_DISTANCE = 30;
 
@@ -67,6 +67,8 @@ const BARREL_RADIUS=1.75;
 const BULLET_SIZE=1;
 const BULLET_INITIALV=25;
 const G=9.8;
+
+let bulletStartY=0.7*WHEEL_RADIUS+BODY_BC_HEIGHT+BODY_TC_HEIGHT+CANNON_C_HEIGHT+CANNON_C_HEIGHT/2+BARREL_LENGTH*Math.sin(radians(-bulletAngleY));
 
 function setup(shaders)
 {
@@ -404,7 +406,7 @@ function setup(shaders)
         
         pushMatrix();
             
-            multTranslation([0, BODY_HEIGHT-BODY_TC_HEIGHT*2/3, -BODY_TC_LENGHT/3]);
+            multTranslation([0, BODY_HEIGHT-BODY_TC_HEIGHT, -BODY_TC_LENGHT/3]);
             pushMatrix();
                 multRotationY(cannonAngle);
                 cannonBottom();
@@ -425,10 +427,6 @@ function setup(shaders)
                 multRotationY(cannonAngle);
                 multTranslation([0,-CANNON_C_HEIGHT+0.5,CANNON_C_LENGHT]);
                 barrel();
-                if(bulletShot==false){
-                    bulletMview=modelView();
-                    bulletAngleY=cannonAngle2;
-                }
             popMatrix();
         
         popMatrix();
@@ -452,6 +450,12 @@ function setup(shaders)
             CYLINDER.draw(gl, program, mode);
         popMatrix();
         multTranslation([0,0,BARREL_LENGTH/2-BARREL_LENGTH/4]);
+        if(bulletShot==false){
+            bulletMview=modelView();
+            bulletEye= eye;
+            bulletAngleX=cannonAngle;
+            bulletAngleY=cannonAngle2;
+        }
         pushMatrix();
             multScale([BARREL_RADIUS,BARREL_RADIUS,BARREL_LENGTH/4]);
             multRotationX(90);
@@ -483,9 +487,27 @@ function setup(shaders)
         SPHERE.draw(gl, program, mode);
     }
 
+    function projectile(){
+            pushMatrix();
+                loadMatrix(bulletMview);
+                //multRotationX(-bulletAngleY);
+                //multRotationY(-bulletAngleX);
+                multTranslation([0,0,BARREL_LENGTH/4/2]);
+                const M = mult(inverse(lookAt(bulletEye, at, up)),modelView());
+                const p0= mult(M,vec4(0,0.5,0,1));
+                let v=mult(normalMatrix(M),vec4(BULLET_INITIALV*Math.cos(radians(-bulletAngleY))*(Math.sin(radians(bulletAngleX))),BULLET_INITIALV*Math.sin(radians(-bulletAngleY))-G/2*time,BULLET_INITIALV*Math.cos(radians(-bulletAngleY))*(Math.cos(radians(bulletAngleX))),0)); 
+            popMatrix();
+                console.log(p0);
+                pushMatrix();
+                    multTranslation([p0[0]+v[0]*time,p0[1]+v[1]*time,p0[2]+v[2]*time]); 
+                    //multTranslation([p0[0],p0[1],p0[2]]);
+                    bullet();
+                popMatrix();
+    }
+
     function render()
     {
-        if(time>(BULLET_INITIALV*Math.sin(radians(-bulletAngleY))+Math.sqrt(Math.pow(BULLET_INITIALV*Math.sin(radians(-bulletAngleY)),2)+2*G*bulletStartY))/G){
+        if(time>3){//(BULLET_INITIALV*Math.sin(radians(-bulletAngleY))+Math.sqrt(Math.pow(BULLET_INITIALV*Math.sin(radians(-bulletAngleY)),2)+2*G*bulletStartY))/G){
             bulletShot=false;
             time=0;
         }
@@ -505,19 +527,10 @@ function setup(shaders)
         pushMatrix();
             tank();
         popMatrix();
-        if(bulletShot){
-            time+=0.01;
-            pushMatrix();
-                loadMatrix(bulletMview);
-                multRotationX(-bulletAngleY);
-                multTranslation([0,0,BARREL_LENGTH/4/2]);
-                let y= BULLET_INITIALV*Math.sin(radians(-bulletAngleY))*time-G/2*time*time;
-                console.log(y);
-                pushMatrix();
-                    multTranslation([0,y,BULLET_INITIALV*Math.cos(radians(-bulletAngleY))*time]); 
-                    bullet();
-                popMatrix();
-            popMatrix();
+            if(bulletShot){
+                time+=0.01;
+                projectile();
+        popMatrix();
         }
     }
 }
