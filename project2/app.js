@@ -512,7 +512,6 @@ function setup(shaders)
                 multRotationX(-bulletAngleY);
                 multTranslation([0,0,BARREL_LENGTH/4/2]);
                 let y= BULLET_INITIALV*Math.sin(radians(-bulletAngleY))*time-G/2*time*time;
-                console.log(y);
                 pushMatrix();
                     multTranslation([0,y,BULLET_INITIALV*Math.cos(radians(-bulletAngleY))*time]); 
                     bullet();
@@ -521,6 +520,7 @@ function setup(shaders)
         }
     }
 }
+
 
 const urls = ["shader.vert", "shader.frag"];
 loadShadersFromURLS(urls).then(shaders => setup(shaders))
