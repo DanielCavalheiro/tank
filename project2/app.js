@@ -68,8 +68,6 @@ const BULLET_SIZE=1;
 const BULLET_INITIALV=25;
 const G=9.8;
 
-let bulletStartY=0.7*WHEEL_RADIUS+BODY_BC_HEIGHT+BODY_TC_HEIGHT+CANNON_C_HEIGHT+CANNON_C_HEIGHT/2+BARREL_LENGTH*Math.sin(radians(-bulletAngleY));
-
 function setup(shaders)
 {
     let canvas = document.getElementById("gl-canvas");
@@ -495,16 +493,16 @@ function setup(shaders)
                 //multRotationY(-bulletAngleX);
                 multTranslation([0,0,BARREL_LENGTH/4/2]);
                 const M = mult(inverse(lookAt(bulletEye, at, bulletUp)),modelView());
-                const p0= mult(M,vec4(0,0.5,0,1));
-                let v=mult(normalMatrix(M),//vec4(BULLET_INITIALV*Math.cos(radians(-bulletAngleY))*(Math.sin(radians(bulletAngleX))),BULLET_INITIALV*Math.sin(radians(-bulletAngleY))-G/2*time,BULLET_INITIALV*Math.cos(radians(-bulletAngleY))*(Math.cos(radians(bulletAngleX))),0)); 
+                const P0= mult(M,vec4(0,0.5,0,1));
+                const V=mult(normalMatrix(M),//vec4(BULLET_INITIALV*Math.cos(radians(-bulletAngleY))*(Math.sin(radians(bulletAngleX))),BULLET_INITIALV*Math.sin(radians(-bulletAngleY))-G/2*time,BULLET_INITIALV*Math.cos(radians(-bulletAngleY))*(Math.cos(radians(bulletAngleX))),0)); 
                             vec4(0,BULLET_INITIALV*Math.sin(radians(-bulletAngleY))-G/2*time,BULLET_INITIALV*Math.cos(radians(-bulletAngleY)),0));
             popMatrix();
                 //console.log(p0);
             pushMatrix();
-                multTranslation([p0[0]+v[0]*time,p0[1]+v[1]*time,p0[2]+v[2]*time]); 
+                multTranslation([P0[0]+V[0]*time,P0[1]+V[1]*time,P0[2]+V[2]*time]); 
                     //multTranslation([p0[0],p0[1],p0[2]]);
                 bullet();
-                if(p0[1]+v[1]*time<0){
+                if(P0[1]+V[1]*time<0){
                     bulletShot=false;
                     time=0;
                 }
