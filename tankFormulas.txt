@@ -1,0 +1,5 @@
+P'=m.P
+V'=(m^T)^-1 .V
+
+Pproj=inverse(mView).STACK.modelView().(0, 0.5, 0, 1
+Vproj=normalMatrix(inverse(mView).STACK.modelView())
